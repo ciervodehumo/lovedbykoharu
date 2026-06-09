@@ -1,0 +1,901 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SATURNO</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cormorant+Garamond:wght@400;500;600&display=swap');
+:root{
+    --space:#000000;
+    --charcoal:#ffffff;
+    --silver:#ffffff;
+    --silver-soft:#ffffff;
+    --vin-dark:#a07e83;
+    --vin-mid:#be939a;
+    --accent:rgba(90,15,28,0.25);
+    --edge-line:rgba(255,255,255,0.08);
+    --shadow:rgba(0,0,0,0.3);
+    --ui-text-size:clamp(0.75rem,0.85vw,0.9rem);
+    --text-terminal:12px;
+    --text-hud:11px;
+    --text-panel-label:11px;
+    --text-panel-title:12px;
+    --text-panel-item:12px;
+    --text-panel-note:12px;
+    --text-poem:12px;
+    --text-message:13px;
+    --text-signature:14px;
+    --text-toggle:9px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+::selection{background:rgba(143, 101, 108, 0.25);color:var(--silver-soft);} 
+::selection{background:rgba(138, 99, 105, 0.18);color:var(--silver-soft);} 
+html,body{height:100%;color:#ffffff;font-family:'Space Mono',monospace;overflow:hidden;}
+body{background:#000000;} 
+button,input{font-family:'Space Mono',monospace;}
+::selection{background:rgba(122,28,42,.18);color:var(--silver-soft);} 
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:1;animation:drift 42s linear infinite;}
+.star{position:absolute;width:2.2px;height:2.2px;background:rgba(255,255,255,1);	border-radius:50%;box-shadow:0 0 12px rgba(255,255,255,0.6);animation:twinkle 6.5s linear infinite, driftStar 12s ease-in-out infinite alternate;}
+.star.small{width:1.2px;height:1.2px;opacity:.7;filter:blur(0.4px);}
+.star.glow{width:4px;height:4px;background:rgba(255,255,255,1);box-shadow:0 0 20px rgba(255,255,255,0.8);}
+.star.medium{width:2.8px;height:2.8px;opacity:.8;background:rgba(255,255,255,0.95);}
+.star.vin{background:rgba(90,15,28,0.35);box-shadow:0 0 8px rgba(90,15,28,0.15);}
+.star.fast{animation-duration:3s, 8s;}
+.star.slow{animation-duration:9s, 20s;}
+.star.shine{animation:twinkle 6.5s linear infinite, driftStar 12s ease-in-out infinite alternate, shine 7s ease-in-out infinite;box-shadow:0 0 22px rgba(255,255,255,0.95);}
+@keyframes twinkle{0%{opacity:.22;}50%{opacity:.62;}100%{opacity:.22;}}
+@keyframes shine{0%,100%{opacity:0.35;filter:drop-shadow(0 0 0 rgba(255,255,255,0));}50%{opacity:1;filter:drop-shadow(0 0 16px rgba(255,255,255,0.85));}}
+@keyframes drift{0%{transform:translate(0,0);}50%{transform:translate(-42px,24px);}100%{transform:translate(0,0);}}
+@keyframes driftStar{0%{transform:translate(0,0);}50%{transform:translate(2.4px,-1.5px);}100%{transform:translate(0,0);}}
+#login,#terminal,#universe{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:20px;z-index:2;}
+#login{padding:28px;}
+.login-panel{position:relative;z-index:2;width:min(460px,96vw);padding:28px 24px;border:1px solid rgba(255,255,255,0.08);background:rgba(10,10,10,0.85);backdrop-filter:blur(12px);box-shadow:0 24px 50px rgba(0,0,0,0.4);border-radius:24px;overflow:hidden;color:#ffffff}
+.login-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 14% 18%, rgba(90,15,28,.08), transparent 18%),radial-gradient(circle at 82% 18%, rgba(255,255,255,.04), transparent 14%);pointer-events:none;}
+.scene-label{position:absolute;top:18px;left:24px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,0.5);}
+    .title{font-size:clamp(1.2rem,2.2vw,1.7rem);letter-spacing:.34em;text-transform:uppercase;color:#ffffff;line-height:1.02;font-family:'Cormorant Garamond',serif;}
+    .subtitle{margin-top:10px;font-size:0.86rem;line-height:1.7;color:rgba(255,255,255,0.6);max-width:100%;}
+.field{width:100%;margin-top:18px;display:flex;flex-direction:column;gap:14px;}
+input{width:100%;padding:14px 14px;background:rgba(10,10,10,0.78);border:1px solid rgba(255,255,255,0.12);border-radius:16px;color:#ffffff;font-size:var(--ui-text-size);outline:none;transition:border .2s ease,box-shadow .2s ease;}
+input::placeholder{color:rgba(255,255,255,0.58);}
+input:focus{border-color:rgba(90,15,28,.65);box-shadow:0 14px 34px rgba(90,15,28,.16);}
+button{padding:13px 16px;border-radius:18px;border:1px solid transparent;background:#dabec23f;color:#fff;cursor:pointer;letter-spacing:.16em;text-transform:uppercase;font-size:var(--ui-text-size);transition:transform .18s ease,background .18s ease,box-shadow .18s ease;box-shadow:0 16px 36px rgba(90,15,28,.35);}
+button:hover{transform:translateY(-1px);background:#9e747a;box-shadow:0 18px 38px rgba(90,15,28,.45);}
+
+
+.audio-info{display:grid;gap:12px;align-self:center;}
+    .track-meta{font-size:var(--text-hud);letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.78);}
+.progress-bar{position:relative;height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;cursor:pointer;}
+.progress-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg, rgba(255,255,255,.9), rgba(255,255,255,.65));width:0%;transition:width .15s linear;}
+    .time-row{display:flex;justify-content:space-between;font-size:var(--text-hud);color:rgba(255,255,255,.78);letter-spacing:.06em;}
+
+.audio-action{font:700 0.95rem 'Space Mono',monospace;padding:12px 16px;border-radius:16px;border:1px solid rgba(244,194,215,0.30);background:transparent;color:rgba(244,194,215,0.95);cursor:pointer;transition:none;box-shadow:none;opacity:1;}
+.audio-action:hover,.audio-action:focus-visible{background:transparent;border-color:rgba(244,194,215,0.30);color:rgba(244,194,215,0.95);box-shadow:none;transform:none;}
+.audio-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#volumeSlider,#audioHudVolume{width:96px;appearance:none;height:6px;border-radius:999px;background:rgba(255,255,255,.18);outline:none;flex:1;min-width:60px;}
+.audio-hud{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;width:auto;padding:0;border-radius:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;z-index:4;transition:opacity .3s ease,transform .3s ease;transform:translateX(0);}
+#volumeSlider::-webkit-slider-thumb,#audioHudVolume::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 0 10px rgba(255,255,255,.3);}
+#volumeSlider::-moz-range-thumb,#audioHudVolume::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 0 10px rgba(255,255,255,.3);}
+.vinyl-player{display:grid;gap:10px;padding:12px 0 0;}
+.audio-hud.hidden{opacity:0;pointer-events:none;transform:translateY(10px);}
+.audio-hud-toggle{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;border:1px solid rgba(244,194,215,0.35);background:rgba(160,126,131,0.18);color:#f6dbe6;font:700 1rem 'Space Mono',monospace;cursor:pointer;box-shadow:0 10px 24px rgba(90,15,28,0.22);transition:transform .18s ease, background .18s ease, box-shadow .18s ease;}
+.audio-hud-toggle:hover,.audio-hud-toggle:focus-visible{transform:translateY(-1px);background:rgba(160,126,131,0.28);box-shadow:0 14px 28px rgba(90,15,28,0.28);} 
+.audio-hud-toggle span{opacity:.92;}
+.audio-hud-body{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:18px;background:rgba(10,10,10,0.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 44px rgba(0,0,0,.32);backdrop-filter:blur(14px);}
+.audio-hud.collapsed .audio-hud-body{display:none;}
+.hud-vinyl{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hud-controls{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.hud-meta{display:flex;align-items:center;gap:8px;font-size:var(--text-hud);color:rgba(255,255,255,.78);white-space:nowrap;}
+.error{min-height:24px;font-size:var(--text-hud);color:#ff6b7a;letter-spacing:.03em;}
+@media (max-width:720px){.vinyl-player{grid-template-columns:1fr;}
+  .audio-actions{flex-wrap:wrap;}
+  #volumeSlider,#audioHudVolume{width:100%;}
+  .audio-hud{right:12px;left:12px;bottom:14px;width:auto;align-items:center;transform:none;}}
+#login.hidden{opacity:0;transform:translateY(-18px);pointer-events:none;transition:opacity .5s ease,transform .5s ease;}
+#terminal{display:none;opacity:0;transition:opacity .5s ease;}
+#terminal.active{display:flex;opacity:1;}
+.terminal-box{position:relative;z-index:2;width:min(440px,94vw);padding:26px 22px;border-radius:24px;background:rgba(10,10,10,0.85);border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 50px rgba(0,0,0,0.4);overflow:hidden;backdrop-filter:blur(12px);} 
+.terminal-box::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 14% 18%, rgba(90,15,28,.08), transparent 18%),radial-gradient(circle at 82% 18%, rgba(255,255,255,.04), transparent 14%);pointer-events:none;}
+.login-decor{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;animation:decorDrift 32s linear infinite alternate;}
+.orbit-ring{position:absolute;border:1px solid rgba(255,255,255,.14);border-radius:999px;opacity:.45;pointer-events:none;animation:spinSlow 18s linear infinite;background:radial-gradient(circle at center, rgba(255,255,255,.02), rgba(255,255,255,0) 58%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02), 0 0 14px rgba(255,255,255,.03);}
+.orbit-ring::before{content:'';position:absolute;inset:7px;border:1px solid rgba(255,255,255,.05);border-radius:999px;opacity:.7;}
+.ring-1{width:220px;height:220px;top:12%;left:8%;--orbit-radius:110px;--orbit-duration:14s;}
+.ring-2{width:160px;height:160px;bottom:16%;right:10%;opacity:.28;animation-duration:22s;--orbit-radius:80px;--orbit-duration:18s;}
+.ring-3{width:120px;height:120px;top:24%;right:14%;opacity:.22;animation-duration:28s;--orbit-radius:60px;--orbit-duration:20s;}
+.orbit-pebble{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 0 8px rgba(255,255,255,.35);animation:pebbleOrbit var(--orbit-duration) linear infinite;transform:translate(-50%,-50%);}
+.decor-note{position:absolute;font-size:0.72rem;color:rgba(255,255,255,.35);letter-spacing:.18em;text-transform:uppercase;opacity:.88;animation:subtleFloat 10s ease-in-out infinite;}
+.note-1{top:20%;left:6%;}
+.note-2{bottom:18%;right:8%;}
+.decor-mark{position:absolute;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25);box-shadow:0 0 14px rgba(255,255,255,.12);opacity:.8;animation:subtleFloat 8s ease-in-out infinite alternate;}
+.mark-1{top:8%;right:16%;}
+.mark-2{bottom:16%;left:12%;}
+.star-symbol{position:absolute;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.95);box-shadow:0 0 20px rgba(255,255,255,.35);pointer-events:none;opacity:.95;animation:floatSlow 14s ease-in-out infinite alternate;}
+.star-symbol::before,.star-symbol::after{content:'';position:absolute;background:rgba(255,255,255,.9);border-radius:1px;}
+.star-symbol::before{top:50%;left:-6px;width:12px;height:1px;transform:translateY(-50%);}
+.star-symbol::after{left:50%;top:-6px;width:1px;height:12px;transform:translateX(-50%);}
+.saturn-symbol{position:absolute;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.98);box-shadow:0 0 20px rgba(255,255,255,.3);pointer-events:none;animation:floatSlow 18s ease-in-out infinite alternate;}
+.saturn-symbol::after{content:'';position:absolute;inset:0;border:1px solid rgba(255,255,255,.08);border-radius:50%;box-shadow:0 0 8px rgba(90,15,28,.12);transform:rotate(15deg);}
+.saturn-symbol.saturn-1{top:14%;right:18%;animation-duration:16s;}
+.saturn-symbol.saturn-2{bottom:22%;left:22%;animation-duration:20s;}
+.saturn-symbol.saturn-3{top:52%;left:10%;animation-duration:24s;}
+@keyframes spinSlow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes pebbleOrbit{0%{transform:translate(-50%,-50%) rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg);}}
+@keyframes decorDrift{0%{transform:translate(0,0);}50%{transform:translate(-10px,6px);}100%{transform:translate(0,0);}}
+@keyframes subtleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+@keyframes floatSlow{0%,100%{transform:translate(0,0);}50%{transform:translate(0,-6px);}}
+.terminal-head{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.term-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:0 0 12px rgba(255,255,255,.2);}
+.term-title{font-size:1rem;letter-spacing:.4em;text-transform:uppercase;color:var(--silver);}
+    .term-line{font-size:var(--text-terminal);line-height:1.7;color:rgba(220,220,220,.95);white-space:pre-wrap;min-height:24px;}
+.term-bright{color:var(--vin-mid);}
+body{margin:0;overflow:hidden;background:#000000;color:var(--charcoal);font-family:'Space Mono',monospace;}
+#universe{display:none;opacity:0;transition:opacity .8s ease;}
+#universe.active{position:relative;display:grid;opacity:1;grid-template-columns:minmax(180px,220px) 1fr minmax(180px,220px);align-items:center;justify-items:center;gap:28px;width:100%;max-width:none;padding:22px 20px 34px;margin:0;}
+#saturn{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;transform:scale(0.90);transform-origin:center center;}
+#saturn canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0;pointer-events:none;z-index:0;}
+#saturn::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 48% 45%, rgba(255,255,255,.02), transparent 20%),radial-gradient(circle at 52% 52%, rgba(255,255,255,.01), transparent 20%);pointer-events:none;z-index:0;}
+.fragments{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:100%;pointer-events:none;z-index:2;}
+    .fragment{position:absolute;color:rgba(255,255,255,.72);font-size:var(--text-poem);letter-spacing:.02em;line-height:1.2;max-width:150px;text-align:justify;opacity:0;text-transform:none;}
+    .fragment.small{font-size:var(--text-poem);opacity:.5;text-transform:none;}
+.fragment.move{animation:fragFade .9s ease forwards;}
+ .special-asteroid-label{position:absolute;pointer-events:none;z-index:4;color:#f4c2d7;font-size:var(--text-poem);line-height:1.1;text-align:center;white-space:pre-line;font-family:'Space Mono',monospace;opacity:.96;letter-spacing:.02em;transform:translate(-50%, -100%);text-transform:none;}
+@keyframes fragFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@keyframes fragFloat{from{transform:translateY(0);}to{transform:translateY(4px);}}
+    .planet-info{position:fixed;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:16px 14px;border:1px solid var(--edge-line);background:rgba(10,10,10,0.7);border-radius:18px;backdrop-filter:blur(10px);opacity:0;animation:panelIn .9s ease forwards;z-index:3;}
+    .planet-info.left{left:calc(50% - 420px);bottom:24px;top:auto;transform:none;animation-name:panelInLeft;animation-delay:0s;width:320px}
+    .planet-info.right{right:calc(50% - 420px);bottom:24px;top:auto;left:auto;transform:none;animation-name:panelInRight;animation-delay:.15s;width:320px}
+.planet-info::before{content:'';position:absolute;top:18px;left:18px;width:20px;height:1px;background:rgba(255,255,255,.18);}
+.planet-info::after{content:'';position:absolute;bottom:18px;right:18px;width:20px;height:1px;background:rgba(255,255,255,.12);}
+.panel-header{width:100%;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.panel-toggle{font:700 var(--text-toggle) 'Space Mono',monospace;color:#ffffff;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);backdrop-filter:blur(8px);border-radius:14px;padding:10px 12px;cursor:pointer;letter-spacing:.18em;text-transform:uppercase;transition:background .2s ease,transform .2s ease;}
+.panel-toggle:hover{background:rgba(255,255,255,.08);transform:translateY(-1px);}
+.planet-info.collapsed ul,
+.planet-info.collapsed .panel-line{
+    display:none;
+}
+.planet-info.collapsed{padding-bottom:12px;}
+    .planet-info small{font-size:var(--text-panel-label);letter-spacing:.04em;text-transform:none;color:rgba(255,255,255,.72);}
+    .planet-info h2{font-size:var(--text-panel-title);letter-spacing:.04em;text-transform:none;color:#ffffff;position:relative;margin-top:2px;}
+.planet-info h2::after{content:'';position:absolute;left:0;bottom:-10px;width:36px;height:1px;background:rgba(255,255,255,.3);}
+    .planet-info ul{display:grid;gap:11px;list-style:none;padding:0;margin:0;width:100%;}
+    .planet-info li{display:flex;justify-content:space-between;font-size:var(--text-panel-item);letter-spacing:.02em;color:rgba(255,255,255,.88);line-height:1.5;text-transform:none;}
+.planet-info li span:first-child{opacity:.72;}
+.planet-info li:not(:last-child){border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:10px;}
+.planet-info .annotation{margin-top:8px;font-size:var(--text-panel-note);line-height:1.7;color:rgba(255,255,255,.68);padding-left:10px;border-left:1px solid var(--edge-line);font-style:italic;text-transform:none;}
+.planet-info .detailrow{display:flex;justify-content:space-between;align-items:center;width:100%;}
+.planet-info .detailrow span:first-child{opacity:.7;}
+.planet-info .scanneline{position:absolute;left:0;bottom:0;width:100%;height:1px;background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.15) 30%, rgba(255,255,255,.05) 70%, transparent 100%);}
+.intro-message{margin-top:18px;font-size:var(--text-panel-note);line-height:1.85;color:rgba(255,255,255,.82);letter-spacing:.02em;text-align:justify;max-width:100%;padding:0 6px;text-transform:none;}
+.intro-message span{display:block;text-align:center;margin-top:14px;opacity:.86;}
+    .poem-column{position:fixed;top:40%;right:18px;transform:translateY(-50%);width:170px;color:rgba(255,255,255,.95);opacity:.88;line-height:1.4;text-align:justify;padding:13px 5px;border-radius:9px;z-index:2;font-size:var(--text-poem);max-height:82vh;overflow:auto;}
+    .poem-column span{display:block;margin-top:12px;opacity:.9}
+@keyframes panelIn{to{opacity:1;transform:none;}}
+@keyframes panelInLeft{to{opacity:1;transform:none;}}
+@keyframes panelInRight{to{opacity:1;transform:none;}}
+@keyframes hudPulse{0%,100%{opacity:.88;}50%{opacity:1;}}
+.message{position:relative;z-index:4;margin-top:20px;text-align:center;max-width:805px;line-height:1.7;font-size:var(--text-message);color:rgba(255,255,255,.95);font-family:'Cormorant Garamond',serif;opacity:0;animation:fadeIn 1.2s ease .8s forwards;text-transform:none;}
+.message strong{color:var(--silver-soft);}
+.signature{position:relative;z-index:4;margin-top:22px;font-size:1.02rem;line-height:1.4;color:var(--vin-dark);font-style:italic;font-family:'Cormorant Garamond',serif;letter-spacing:.02em;}
+.glow-line{position:absolute;left:50%;transform:translateX(-50%);width:260px;height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);pointer-events:none;opacity:.6;}
+.glow-line.top{top:12%;}
+.glow-line.bottom{bottom:10%;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:.92;}}
+@keyframes fadeIn{to{opacity:1;}}
+@keyframes saturnFloat{0%,100%{transform:rotate(-10deg) translateY(0);}50%{transform:rotate(-10deg) translateY(-8px);}}
+@keyframes loadingPulse{0%,100%{opacity:.65;transform:translateY(0);}50%{opacity:1;transform:translateY(-4px);}}
+@media (max-width:720px){#universe{grid-template-columns:1fr;max-width:100%;padding:16px 12px 26px;}#saturn{height:52vh;} .planet-info{width:120px;padding:8px 6px;}.title{font-size:1.5rem;}.subtitle{max-width:100%;font-size:8px;}.terminal-box{width:92vw;padding:26px 20px 24px;}.message{font-size:0.85rem;}.signature{font-size:1.2rem;}.poem-column{top:30%;right:10px;transform:translateY(-50%);width:150px;max-height:60vh;font-size:7.1px;}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+</head>
+<body>
+<audio id="backgroundAudio" preload="auto" crossorigin="anonymous">
+    <source src="audio/saturn.mp3" type="audio/mpeg">
+</audio>
+<div class="stars" id="stars"></div>
+<div id="login">
+    <div class="login-panel">
+        <div class="scene-label">Transmisión privada</div>
+        <h1 class="title">SATURN</h1>
+        <p class="subtitle">Toda luna conserva memoria de aquello que la mantiene en órbita.</p>
+        <div class="field">
+            <input id="password" type="password" placeholder="Introduce la clave" autocomplete="off" />
+            <button id="startBtn">INICIAR TRANSMISIÓN</button>
+            <div class="vinyl-player" id="loginAudioPlayer">
+                <div class="audio-info">
+                    <div class="track-meta">Saturn · Sleepin At Last</div>
+                    <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="time-row">
+                        <span class="current-time">0:00</span>
+                        <span class="duration-time">0:00</span>
+                    </div>
+                </div>
+                <div class="audio-actions">
+                    <button class="audio-action" id="playMusicBtn" type="button" aria-pressed="false">▶</button>
+                    <button class="audio-action" id="muteBtn" type="button" aria-pressed="false">Mute</button>
+                    <input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.65" aria-label="Volume" />
+                </div>
+            </div>
+            <div class="error" id="error"></div>
+        </div>
+    </div>
+    <div class="login-decor">
+        <span class="orbit-ring ring-1"><i class="orbit-pebble"></i></span>
+        <span class="orbit-ring ring-2"><i class="orbit-pebble"></i></span>
+        <span class="orbit-ring ring-3"><i class="orbit-pebble"></i></span>
+        <div class="star-symbol" style="top:18%;left:22%;"></div>
+        <div class="star-symbol" style="bottom:20%;left:16%;width:8px;height:8px;"></div>
+        <div class="star-symbol" style="top:30%;right:20%;width:7px;height:7px;"></div>
+        <div class="saturn-symbol saturn-1"></div>
+        <div class="saturn-symbol saturn-2"></div>
+        <div class="saturn-symbol saturn-3"></div>
+        <div class="decor-note note-1">constante celeste</div>
+        <div class="decor-note note-2">corazón estelar</div>
+        <div class="decor-mark mark-1"></div>
+        <div class="decor-mark mark-2"></div>
+    </div>
+</div>
+<div id="terminal">
+    <div class="terminal-box">
+        <div class="terminal-head">
+            <span class="term-dot"></span>
+            <span class="term-dot"></span>
+            <span class="term-dot"></span>
+        </div>
+        <div class="term-line"><span class="term-bright">TRANSMISSION DETECTED</span></div>
+        <div class="term-line">USER: <span class="term-bright" id="terminalName"></span></div>
+        <div class="term-line" id="loadLine">Decodificando señal...</div>
+        <div class="term-line" id="statusLine">Preparando enlace seguro...</div>
+    </div>
+</div>
+<div id="universe">
+    <div class="audio-hud hidden" id="audioHud">
+        <button class="audio-hud-toggle" id="audioHudToggle" type="button" aria-expanded="false" aria-label="Abrir reproductor">♡</button>
+        <div class="audio-hud-body">
+            <div class="hud-controls">
+                <button class="audio-action" id="audioHudPlayPause" type="button" aria-pressed="false">▶</button>
+                <button class="audio-action" id="audioHudMute" type="button" aria-pressed="false">Mute</button>
+                <input id="audioHudVolume" type="range" min="0" max="1" step="0.05" value="0.65" aria-label="Volume" />
+            </div>
+            <div class="hud-meta">
+                <span class="current-time">0:00</span>
+                <span class="duration-time">0:00</span>
+            </div>
+        </div>
+    </div>
+    <div class="planet-info left collapsed" id="planetInfoPanel">
+        <div class="panel-header">
+            <div>
+                <small>Datos Orbitales</small>
+                <h2>Saturno</h2>
+            </div>
+            <button class="panel-toggle" id="planetInfoToggle" type="button" aria-expanded="false">Mostrar ↓</button>
+        </div>
+        <div class="panel-line"></div>
+        <ul>
+            <li><span>Órbita</span><span>29.5 Años Terrestres</span></li>
+            <li><span>Rotación</span><span>10.7 H</span></li>
+            <li><span>Temperatura</span><span>-178 °C</span></li>
+            <li><span>Masa</span><span>5.68×10²⁶ KG</span></li>
+        </ul>
+    </div>
+    <div class="glow-line top"></div>
+    <div id="saturn"></div>
+    <div id="fragments" class="fragments" aria-hidden="true"></div>
+    <div class="glow-line bottom"></div>
+    <div class="poem-column" id="poemColumn">
+        Hay silencio entre los tintineos de las estrellas que se posan en su piel. Borré las lágrimas entre besos suaves que dejé al borde de sus sueños... borré sus tristezas con las luces intermitentes de las luciérnagas dormidas en los susurros mágicos de la noche.
+        <span>Entrecierra los ojos como si fuese a dormir en la música de mis palabras, le bebí los párpados cargados de azules y púrpuras para saciar mis latidos apurados a sentirlo... Lo miré como quien mira un poema dibujado con notas musicales, intenté guardar en mis ojos la dulzura de su mirada y respiré su luz mientras guardaba mi aire en su boca.</span>
+    </div>
+    <div class="planet-info right collapsed" id="ringInfoPanel">
+        <div class="panel-header">
+            <div>
+                <small>Estructura</small>
+                <h2>Anillos</h2>
+            </div>
+            <button class="panel-toggle" id="ringInfoToggle" type="button" aria-expanded="false">Mostrar ↓</button>
+        </div>
+        <div class="panel-line"></div>
+        <ul>
+            <li><span>Composición</span><span>Hielo y Rocas</span></li>
+            <li><span>Anchura</span><span>280,000 KM</span></li>
+            <li><span>Lunas</span><span>274</span></li>
+        </ul>
+    </div>
+    <p class="message" id="quoteText"></p>
+    <p class="signature" id="signatureText"></p>
+</div>
+<script>
+const CONFIG = {
+    password: "1108",
+    name: "Màlbec Vōlturi",
+    title: "SATURNO",
+    quote: "Si el cosmos tiene una constante secreta,\nsospecho que está oculta entre las coordenadas\nde sus lunares y la longitud de onda azul\nque habita en sus ojos.",
+    signature: "Un satelite más"
+};
+const stars = document.getElementById('stars');
+const audioHudToggle = document.getElementById('audioHudToggle');
+const audioHud = document.getElementById('audioHud');
+
+if (audioHudToggle && audioHud) {
+    audioHudToggle.addEventListener('click', () => {
+        const isOpen = audioHud.classList.toggle('collapsed');
+        audioHudToggle.setAttribute('aria-expanded', String(!isOpen));
+        audioHudToggle.textContent = isOpen ? '♡' : '✕';
+    });
+}
+
+function createStars(){
+    for(let i=0;i<520;i++){
+        const star = document.createElement('div');
+        const sizeType = Math.random();
+        star.className = 'star ' + (sizeType < 0.24 ? 'small' : sizeType < 0.52 ? 'medium' : '');
+        // occasional glowing and speed variants
+        if(Math.random() < 0.14) star.classList.add('glow');
+        if(Math.random() < 0.22) star.classList.add('fast');
+        if(Math.random() > 0.84) star.classList.add('slow');
+
+        // color palette: mostly white bright, occasional vinotinto accent
+        const p = Math.random();
+        if(p < 0.08){
+            star.classList.add('vin');
+            star.style.background = 'rgba(90,15,28,0.55)';
+            star.style.boxShadow = '0 0 8px rgba(90,15,28,0.25)';
+        } else {
+            // Mostly white/bright for dark space aesthetic
+            star.style.background = 'rgba(255,255,255,1)';
+            star.style.boxShadow = '0 0 6px rgba(255,255,255,0.45)';
+            if(Math.random() < 0.14){
+                star.classList.add('shine');
+            }
+        }
+
+        star.style.left = Math.random()*100 + '%';
+        star.style.top = Math.random()*100 + '%';
+        star.style.opacity = 0.45 + Math.random()*0.55; // higher base opacity for dark bg
+        star.style.animationDuration = (3 + Math.random()*5) + 's, ' + (10 + Math.random()*15) + 's';
+        star.style.transform = 'scale(' + (0.9 + Math.random()*1.3) + ')';
+        stars.appendChild(star);
+    }
+}
+createStars();
+const login = document.getElementById('login');
+const terminal = document.getElementById('terminal');
+const universe = document.getElementById('universe');
+const startBtn = document.getElementById('startBtn');
+const errorText = document.getElementById('error');
+const passwordInput = document.getElementById('password');
+const terminalName = document.getElementById('terminalName');
+const loadLine = document.getElementById('loadLine');
+const statusLine = document.getElementById('statusLine');
+const quoteText = document.getElementById('quoteText');
+const signatureText = document.getElementById('signatureText');
+quoteText.textContent = CONFIG.quote;
+signatureText.textContent = CONFIG.signature;
+terminalName.textContent = CONFIG.name;
+const backgroundAudio = document.getElementById('backgroundAudio');
+const playMusicBtn = document.getElementById('playMusicBtn');
+const muteBtn = document.getElementById('muteBtn');
+const volumeSlider = document.getElementById('volumeSlider');
+const audioHudPlayPause = document.getElementById('audioHudPlayPause');
+const audioHudMute = document.getElementById('audioHudMute');
+const audioHudVolume = document.getElementById('audioHudVolume');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const progressFills = document.querySelectorAll('.progress-fill');
+const currentTimeDisplays = document.querySelectorAll('.current-time');
+const durationTimeDisplays = document.querySelectorAll('.duration-time');
+const AUDIO_STATE_KEY = 'saturnAudioState';
+
+function loadAudioState(){
+    const stored = sessionStorage.getItem(AUDIO_STATE_KEY);
+    if(!stored) return {isPlaying:false,currentTime:0,volume:0.65,muted:false};
+    try{ const parsed = JSON.parse(stored); return {
+            isPlaying: Boolean(parsed.isPlaying),
+            currentTime: Number(parsed.currentTime) || 0,
+            volume: Number(parsed.volume) >= 0 ? Math.min(1, Math.max(0, Number(parsed.volume))) : 0.65,
+            muted: Boolean(parsed.muted)
+        }; } catch { return {isPlaying:false,currentTime:0,volume:0.65,muted:false}; }
+}
+function saveAudioState(){
+    if(!backgroundAudio) return;
+    const state = {
+        isPlaying: !backgroundAudio.paused && !backgroundAudio.ended,
+        currentTime: backgroundAudio.currentTime || 0,
+        volume: backgroundAudio.volume,
+        muted: backgroundAudio.muted
+    };
+    sessionStorage.setItem(AUDIO_STATE_KEY, JSON.stringify(state));
+}
+function updateAudioControls(){
+    if(!backgroundAudio) return;
+    const playing = !backgroundAudio.paused && !backgroundAudio.ended;
+    const muted = backgroundAudio.muted;
+    if(playMusicBtn){
+        playMusicBtn.textContent = playing ? '⏸' : '▶';
+        playMusicBtn.setAttribute('aria-pressed', String(playing));
+    }
+    if(audioHudPlayPause){
+        audioHudPlayPause.textContent = playing ? '⏸' : '▶';
+        audioHudPlayPause.setAttribute('aria-pressed', String(playing));
+    }
+    if(muteBtn){
+        muteBtn.textContent = muted ? 'Unmute' : 'Mute';
+        muteBtn.setAttribute('aria-pressed', String(muted));
+    }
+    if(audioHudMute){
+        audioHudMute.textContent = muted ? 'Unmute' : 'Mute';
+        audioHudMute.setAttribute('aria-pressed', String(muted));
+    }
+    if(volumeSlider) volumeSlider.value = String(backgroundAudio.volume);
+    if(audioHudVolume) audioHudVolume.value = String(backgroundAudio.volume);
+    const current = formatAudioTime(backgroundAudio.currentTime || 0);
+    const duration = formatAudioTime(backgroundAudio.duration || 0);
+    currentTimeDisplays.forEach(el => el.textContent = current);
+    durationTimeDisplays.forEach(el => el.textContent = duration);
+    const progress = backgroundAudio.duration ? (backgroundAudio.currentTime / backgroundAudio.duration) * 100 : 0;
+    progressFills.forEach(el => el.style.width = progress + '%');
+}
+function formatAudioTime(seconds){
+    const total = Number(seconds) || 0;
+    const minutes = Math.floor(total / 60);
+    const secs = Math.floor(total % 60).toString().padStart(2, '0');
+    return `${minutes}:${secs}`;
+}
+function restoreAudioPosition(saved){
+    if(!backgroundAudio || !saved) return;
+    if(saved.currentTime > 0 && backgroundAudio.duration && saved.currentTime < backgroundAudio.duration - 0.1){
+        backgroundAudio.currentTime = saved.currentTime;
+    }
+}
+function toggleAudioPlayback(){
+    if(!backgroundAudio) return;
+    if(backgroundAudio.paused){
+        backgroundAudio.play().catch(()=>{});
+    } else {
+        backgroundAudio.pause();
+    }
+}
+function toggleAudioMute(){
+    if(!backgroundAudio) return;
+    backgroundAudio.muted = !backgroundAudio.muted;
+    saveAudioState();
+    updateAudioControls();
+}
+function setAudioVolume(value){
+    if(!backgroundAudio) return;
+    const volume = Math.min(1, Math.max(0, Number(value)));
+    backgroundAudio.volume = volume;
+    if(volume === 0) backgroundAudio.muted = true;
+    saveAudioState();
+    updateAudioControls();
+}
+function initAudioSystem(){
+    if(!backgroundAudio) return;
+    const savedState = loadAudioState();
+    backgroundAudio.volume = savedState.volume;
+    backgroundAudio.muted = savedState.muted;
+    updateAudioControls();
+    if(backgroundAudio.readyState > 0){
+        restoreAudioPosition(savedState);
+        if(savedState.isPlaying){
+            backgroundAudio.play().catch(()=>{});
+        }
+    }
+    backgroundAudio.addEventListener('loadedmetadata', () => {
+        restoreAudioPosition(savedState);
+        if(savedState.isPlaying){
+            backgroundAudio.play().catch(()=>{});
+        }
+        updateAudioControls();
+    });
+    backgroundAudio.addEventListener('timeupdate', () => {
+        saveAudioState();
+        updateAudioControls();
+    });
+    backgroundAudio.addEventListener('play', () => {
+        saveAudioState();
+        updateAudioControls();
+    });
+    backgroundAudio.addEventListener('pause', () => {
+        saveAudioState();
+        updateAudioControls();
+    });
+    backgroundAudio.addEventListener('volumechange', () => {
+        saveAudioState();
+        updateAudioControls();
+    });
+    if(playMusicBtn) playMusicBtn.addEventListener('click', toggleAudioPlayback);
+    if(muteBtn) muteBtn.addEventListener('click', toggleAudioMute);
+    if(volumeSlider) volumeSlider.addEventListener('input', e => setAudioVolume(e.target.value));
+    if(audioHudPlayPause) audioHudPlayPause.addEventListener('click', toggleAudioPlayback);
+    if(audioHudMute) audioHudMute.addEventListener('click', toggleAudioMute);
+    if(audioHudVolume) audioHudVolume.addEventListener('input', e => setAudioVolume(e.target.value));
+    if(progressBar) progressBar.addEventListener('click', (event) => {
+        const rect = progressBar.getBoundingClientRect();
+        const percent = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        if(backgroundAudio.duration){
+            backgroundAudio.currentTime = percent * backgroundAudio.duration;
+            saveAudioState();
+            updateAudioControls();
+        }
+    });
+}
+
+startBtn.addEventListener('click', validatePassword);
+passwordInput.addEventListener('keydown', e=>{ if(e.key==='Enter') validatePassword(); });
+
+initAudioSystem();
+function validatePassword(){
+    const value = passwordInput.value.trim();
+    if(value !== CONFIG.password){
+        errorText.textContent = 'Señal no reconocida.';
+        passwordInput.focus();
+        return;
+    }
+    errorText.textContent='';
+    login.classList.add('hidden');
+    setTimeout(()=>{ login.style.display='none'; showTerminal(); },380);
+}
+function showTerminal(){
+    terminal.style.display='flex';
+    setTimeout(()=> terminal.classList.add('active'),20);
+    const steps=[
+        {text:'Decodificando señal...', status:'Sincronizando coordenadas...'},
+        {text:'Sincronizando coordenadas...', status:'Verificando órbitas...'},
+        {text:'Acceso concedido.', status:'Conexión establecida.'}
+    ];
+    let index=0;
+    const interval=setInterval(()=>{
+        if(index >= steps.length){
+            clearInterval(interval);
+            endTerminal();
+            return;
+        }
+        loadLine.textContent = steps[index].text;
+        statusLine.textContent = steps[index].status;
+        index++;
+    },1300);
+}
+function endTerminal(){
+    terminal.classList.remove('active');
+    setTimeout(()=>{
+        terminal.style.display='none';
+        universe.style.display='grid';
+        setTimeout(()=> universe.classList.add('active'),20);
+        const audioHud = document.getElementById('audioHud');
+        if(audioHud){
+            audioHud.classList.remove('hidden');
+            audioHud.classList.add('collapsed');
+        }
+        drawSaturn();
+    },450);
+}
+
+let saturnState = null;
+let spriteTexture = null;
+let specialAsteroid = null;
+let specialAsteroidLabel = null;
+
+function createTextSpriteTexture(text){
+    const canvas = document.createElement('canvas');
+    canvas.width = 260;
+    canvas.height = 56;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '700 18px Space Mono';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
+    return texture;
+}
+
+function fibonacciSpherePoint(index, total){
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    const y = 1 - (index / (total - 1)) * 2;
+    const radius = Math.sqrt(1 - y * y);
+    const theta = goldenAngle * index;
+    return {x: Math.cos(theta) * radius, y, z: Math.sin(theta) * radius};
+}
+
+function createRingLayer(innerRatio, outerRatio, opacity, planetRadius){
+    const layer = new THREE.Group();
+    const innerRadius = planetRadius * innerRatio;
+    const outerRadius = planetRadius * outerRatio;
+    const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 256);
+    const ringMaterial = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false});
+    const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringMesh.rotation.x = 0; // ring geometry uses X=0 for horizontal plane (XZ)
+    layer.add(ringMesh);
+    const edgeGeometry = new THREE.RingGeometry(innerRadius * 0.995, outerRadius * 1.005, 256);
+    const edgeMaterial = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:opacity * 0.25, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false});
+    const edgeMesh = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    edgeMesh.rotation.x = 0;
+    layer.add(edgeMesh);
+    return layer;
+}
+
+function createRingAsteroidField(count, ringInnerRadius, ringOuterRadius, ringFlatten){
+    const asteroids = new THREE.Group();
+    const ringWidth = ringOuterRadius - ringInnerRadius;
+    const specialIndex = Math.floor(count * 0.48);
+    for(let i=0;i<count;i++){
+        const angle = Math.random() * Math.PI * 2;
+        const ringRadiusX = ringOuterRadius;
+        const ringRadiusZ = ringOuterRadius * ringFlatten;
+        const baseX = Math.cos(angle) * ringRadiusX;
+        const baseZ = Math.sin(angle) * ringRadiusZ;
+        const offset = -Math.random() * ringWidth * 0.9; // move inward into the ring band
+        const normalX = Math.cos(angle) / ringRadiusX;
+        const normalZ = Math.sin(angle) / ringRadiusZ;
+        const normalLength = Math.sqrt(normalX * normalX + normalZ * normalZ) || 1;
+        const offsetX = (normalX / normalLength) * offset;
+        const offsetZ = (normalZ / normalLength) * offset;
+        const y = (Math.random() - 0.5) * 0.8;
+        const geo = new THREE.SphereGeometry(0.24 + Math.random() * 0.26, 8, 8);
+        const mat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.88});
+        const asteroid = new THREE.Mesh(geo, mat);
+        asteroid.userData = {
+            angle,
+            speed: 0.18 + Math.random() * 0.22,
+            ringRadiusX,
+            ringRadiusZ,
+            offset,
+            y,
+            special: i === specialIndex
+        };
+        if(i === specialIndex){
+            asteroid.material.color.set('#f4c2d7');
+            asteroid.material.opacity = 0.96;
+            asteroid.scale.set(1.08, 1.08, 1.08);
+            specialAsteroid = asteroid;
+        }
+        asteroid.position.set(baseX + offsetX, y, baseZ + offsetZ);
+        asteroids.add(asteroid);
+    }
+    return asteroids;
+}
+
+function createSpecialAsteroidLabel(){
+    if(!specialAsteroidLabel){
+        specialAsteroidLabel = document.createElement('div');
+        specialAsteroidLabel.className = 'special-asteroid-label';
+        specialAsteroidLabel.innerHTML = 'me, who<br>loves you';
+        document.body.appendChild(specialAsteroidLabel);
+    }
+    return specialAsteroidLabel;
+}
+
+function initSaturnScene(){
+    const saturn = document.getElementById('saturn');
+    saturn.innerHTML = '';
+
+    if(saturnState && saturnState.animationFrame){
+        cancelAnimationFrame(saturnState.animationFrame);
+    }
+    if(saturnState && saturnState.renderer){
+        saturnState.renderer.dispose();
+    }
+
+    const width = saturn.clientWidth;
+    const height = saturn.clientHeight;
+    const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(width, height, false);
+    renderer.setClearColor(0x000000, 0);
+    saturn.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 1000);
+    camera.position.set(0, 10, 140);
+    camera.lookAt(0, 0, 0);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    scene.add(ambient);
+    const pointLight = new THREE.PointLight(0xffffff, 0.5, 400);
+    pointLight.position.set(20, 40, 50);
+    scene.add(pointLight);
+
+    spriteTexture = createTextSpriteTexture('Malbec Vōlturi');
+
+    const planetRadius = 24;
+    const ringFlatten = 0.28;
+    const ringInnerRadius = planetRadius * 1.4;
+    const ringOuterRadius = planetRadius * 2.4;
+    const sphereGroup = new THREE.Group();
+    const spherePivot = new THREE.Group();
+    const sphereCount = 780;
+    for(let i = 0; i < sphereCount; i++){
+        const point = fibonacciSpherePoint(i, sphereCount);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: spriteTexture, color:0xffffff, transparent:true, depthWrite:false}));
+        const alpha = 0.20 + 0.70 * ((point.z + 1) / 2);
+        sprite.material.opacity = alpha;
+        sprite.position.set(point.x * planetRadius, point.y * planetRadius, point.z * planetRadius);
+        sprite.scale.set(7.0, 3.0, 1);
+        sphereGroup.add(sprite);
+    }
+
+    // ensure sphere is centered and fixed; use pivot to apply axis tilt
+    const tiltRad = THREE.MathUtils.degToRad(26);
+    spherePivot.add(sphereGroup);
+    spherePivot.rotation.z = tiltRad; // tilt the rotation axis
+
+    const ringContainer = new THREE.Group();
+    ringContainer.position.set(0, 0, 0);
+    ringContainer.rotation.set(0, 0, 0); // reset to origin
+    ringContainer.add(createRingLayer(1.4, 2.4, 0.28, planetRadius));
+    ringContainer.add(createRingLayer(1.45, 2.3, 0.22, planetRadius));
+    ringContainer.add(createRingLayer(1.5, 2.2, 0.16, planetRadius));
+    ringContainer.add(createRingLayer(1.55, 2.1, 0.12, planetRadius));
+
+    const ringAsteroids = createRingAsteroidField(16, ringInnerRadius, ringOuterRadius, ringFlatten);
+    createSpecialAsteroidLabel();
+
+    // ringTilt: holds fixed vertical ring plane position (static relative to scene)
+    const ringTilt = new THREE.Group();
+    ringTilt.position.set(0, 0, 0);
+    ringTilt.rotation.set(THREE.MathUtils.degToRad(90), 0, 0); // X=90° for a vertical ring plane
+    ringTilt.add(ringContainer);
+    ringTilt.add(ringAsteroids);
+
+    // ringPivot: static container for the rings, no independent rotation
+    const ringPivot = new THREE.Group();
+    ringPivot.position.set(0, 0, 0);
+    ringPivot.rotation.set(0, 0, 0);
+    ringPivot.add(ringTilt);
+    scene.add(ringPivot);
+    scene.add(spherePivot);
+
+    const interaction = {x:0, y:0};
+    const orientation = {x:0, y:0};
+
+    window.addEventListener('mousemove', (event) => {
+        interaction.x = (event.clientX / window.innerWidth - 0.5) * 0.6;
+        interaction.y = (event.clientY / window.innerHeight - 0.5) * 0.35;
+    });
+
+    function resize(){
+        const newWidth = saturn.clientWidth;
+        const newHeight = saturn.clientHeight;
+        renderer.setSize(newWidth, newHeight, false);
+        camera.aspect = newWidth / newHeight;
+        camera.updateProjectionMatrix();
+    }
+
+    // self-rotation with natural micro-variations
+    const basePlanetSpeedSec = 0.072; // radians per second (very slow)
+    const axisY = new THREE.Vector3(0,1,0);
+    const clock = new THREE.Clock();
+    function animate(){
+        const delta = clock.getDelta();
+        const t = clock.getElapsedTime();
+        orientation.x += (interaction.y - orientation.x) * 0.04;
+        orientation.y += (interaction.x - orientation.y) * 0.04;
+
+        // micro-variations (low-frequency sinusoids) to avoid mechanical motion
+        const microSec = Math.sin(t * 0.37) * 0.004 + Math.sin(t * 0.13) * 0.0012;
+
+        // rotate the sphere around its local Y axis -> results in rotation about tilted axis
+        const planetAngle = (basePlanetSpeedSec + microSec) * delta;
+        spherePivot.rotateOnAxis(axisY, planetAngle);
+
+        // very subtle nodding from pointer orientation (no translation)
+        spherePivot.rotation.x = orientation.x * 0.02;
+
+        // asteroids orbit horizontally around the ring circumference
+        if (ringAsteroids) {
+            ringAsteroids.children.forEach((asteroid) => {
+                const data = asteroid.userData;
+                data.angle += delta * data.speed;
+                const baseX = Math.cos(data.angle) * data.ringRadiusX;
+                const baseZ = Math.sin(data.angle) * data.ringRadiusZ;
+                const normalX = Math.cos(data.angle) / data.ringRadiusX;
+                const normalZ = Math.sin(data.angle) / data.ringRadiusZ;
+                const normalLength = Math.sqrt(normalX * normalX + normalZ * normalZ) || 1;
+                const offsetX = (normalX / normalLength) * data.offset;
+                const offsetZ = (normalZ / normalLength) * data.offset;
+                asteroid.position.x = baseX + offsetX;
+                asteroid.position.z = baseZ + offsetZ;
+                asteroid.position.y = data.y;
+            });
+        }
+
+        if (specialAsteroid && specialAsteroidLabel) {
+            const vector = specialAsteroid.position.clone().project(camera);
+            const halfWidth = renderer.domElement.clientWidth * 0.5;
+            const halfHeight = renderer.domElement.clientHeight * 0.5;
+            const screenX = (vector.x * halfWidth) + halfWidth;
+            const screenY = (-vector.y * halfHeight) + halfHeight;
+            specialAsteroidLabel.style.left = `${screenX}px`;
+            specialAsteroidLabel.style.top = `${screenY - 18}px`;
+        }
+
+        renderer.render(scene, camera);
+        saturnState.animationFrame = requestAnimationFrame(animate);
+    }
+
+    saturnState = {renderer, scene, camera, animationFrame:null, resize};
+    resize();
+    animate();
+}
+
+function drawSaturn(){
+    initSaturnScene();
+}
+function setupPanelToggles(){
+    document.querySelectorAll('.panel-toggle').forEach(button => {
+        const panel = button.closest('.planet-info');
+        if (!panel) return;
+        button.addEventListener('click', () => {
+            const isCollapsed = panel.classList.toggle('collapsed');
+            button.setAttribute('aria-expanded', String(!isCollapsed));
+            button.textContent = isCollapsed ? 'Mostrar ↓' : 'Ocultar ↑';
+        });
+    });
+}
+window.addEventListener('resize', () => {
+    if (saturnState && saturnState.resize) {
+        saturnState.resize();
+    }
+});
+window.addEventListener('load', setupPanelToggles);
+// generate small floating fragments around the planet
+function createFragments(){
+    const container = document.getElementById('fragments');
+    if(!container) return;
+    container.innerHTML = '';
+
+    // Coordenadas manuales editables
+    const positions = [
+        {text: 'Gravedad como lenguaje de amor', rx: -2.20, ry: -0.50},
+        {text: 'Mi corazón obedece su órbita', rx: -2.5, ry: 0.30},
+        {text: 'Soy un satélite formado en sus manos', rx: -2.20, ry: 0.90},
+        {text: 'Sus ojos son mi rumbo satelital', rx: 1.50, ry: 0.50},
+        {text: 'Mis pulsos siguen su punto gravitacional', rx: 1.00, ry: -0.40},
+        {text: 'Cada beso es un eclipse suave', rx: 1.78, ry: 0.85},
+        {text: 'Perdido en la luz de sus anillos', rx: -0.2, ry: 1}
+    ];
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.36;
+
+    for(let i=0;i<positions.length;i++){
+        const frag = document.createElement('div');
+        frag.className = 'fragment';
+        frag.style.opacity = '1';
+        const position = positions[i];
+        const phrase = position.text;
+        // split phrase into 2 or 3 lines for a fragment-like look
+        const words = phrase.split(' ');
+        const lines = (words.length > 4 && Math.random() > 0.4) ? 3 : 2;
+        const perLine = Math.ceil(words.length / lines);
+        let out = [];
+        for(let k=0;k<lines;k++){
+            out.push(words.slice(k*perLine, (k+1)*perLine).join(' '));
+        }
+        frag.innerHTML = out.join('<br>');
+        const x = centerX + position.rx * maxRadius;
+        const y = centerY + position.ry * maxRadius;
+
+        // Coordenadas manuales editables
+        frag.style.left = `${Math.round(x)}px`;
+        frag.style.top = `${Math.round(y)}px`;
+        frag.style.transform = 'translate(0, 0)';
+        frag.style.animation = 'none';
+
+        if(i % 3 === 0) frag.classList.add('small');
+        container.appendChild(frag);
+    }
+}
+window.addEventListener('load', createFragments);
+window.addEventListener('resize', createFragments);
+</script>
+</body>
+</html>
